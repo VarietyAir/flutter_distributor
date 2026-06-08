@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_app_builder/src/build_config.dart';
 import 'package:flutter_app_builder/src/build_error.dart';
 import 'package:flutter_app_builder/src/build_result.dart';
+import 'package:flutter_app_builder/src/builders/windows/windows_runtime_bundle.dart';
 import 'package:flutter_app_builder/src/commands/flutter.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -46,9 +47,9 @@ abstract class AppBuilder {
         buildArguments.add('--$key');
       } else if (value is Map) {
         for (String subKey in value.keys) {
-          if(key == "dart-define"){
+          if (key == 'dart-define') {
             buildArguments.add('--$key=$subKey=${value[subKey]}');
-          }else{
+          } else {
             buildArguments.addAll(['--$key', '$subKey=${value[subKey]}']);
           }
         }
@@ -72,6 +73,13 @@ abstract class AppBuilder {
       throw BuildError('${processResult.stderr}');
     }
 
-    return resultResolver.resolve(config)..duration = time.elapsed;
+    final result = resultResolver.resolve(config)..duration = time.elapsed;
+    if (platform == 'windows') {
+      await copyWindowsDesktopRuntime(
+        result.outputDirectory,
+        environment: environment,
+      );
+    }
+    return result;
   }
 }
